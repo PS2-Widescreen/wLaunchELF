@@ -11,8 +11,6 @@ extern u8 DEV9_irx[];
 extern int size_DEV9_irx;
 extern u8 NETMAN_irx[];
 extern int size_NETMAN_irx;
-extern u8 ps2ip_irx[];
-extern int size_ps2ip_irx;
 extern u8 SMAP_irx[];
 extern int size_SMAP_irx;
 extern u8 vmc_fs_irx[];
@@ -108,7 +106,6 @@ static u8 have_hdl_info = 0;
 static u8 have_poweroff = 0;
 static u8 have_ps2dev9 = 0;
 static u8 have_netman = 0;
-static u8 have_ps2ip = 0;
 static u8 have_ps2atad = 0;
 static u8 have_ps2hdd = 0;
 static u8 have_ps2fs = 0;
@@ -186,7 +183,7 @@ static int drawMainScreen2(int TV_mode);
 static void delay(int count);
 static void initsbv_patches(void);
 static void load_ps2dev9(void);
-static void load_ps2ip(void);
+static void load_ps2smap(void);
 static void load_ps2atad(void);
 static void ShowDebugInfo(void);
 static void loadBasicModules(void);
@@ -653,7 +650,7 @@ static void load_ps2dev9(void)
 //------------------------------
 //endfunc load_ps2dev9
 //---------------------------------------------------------------------------
-static void load_ps2ip(void)
+static void load_ps2smap(void)
 {
 	int ret;
 
@@ -669,7 +666,7 @@ static void load_ps2ip(void)
 	}
 }
 //------------------------------
-//endfunc load_ps2ip
+//endfunc load_ps2smap
 //---------------------------------------------------------------------------
 static void load_ps2atad(void)
 {

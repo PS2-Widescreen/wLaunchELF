@@ -17,8 +17,8 @@ extern u8 ps2ip_irx[];
 extern int size_ps2ip_irx;
 extern u8 netman_irx[];
 extern int size_netman_irx;
-extern u8 ps2smap_irx[];
-extern int size_ps2smap_irx;
+extern u8 SMAP_irx[];
+extern int size_SMAP_irx;
 extern u8 ps2host_irx[];
 extern int size_ps2host_irx;
 #ifdef SMB
@@ -685,7 +685,7 @@ static void load_ps2ip(void)
 		have_netman = 1;
 	}
 	if (!have_ps2smap) {
-		SifExecModuleBuffer(ps2smap_irx, size_ps2smap_irx,
+		SifExecModuleBuffer(SMAP_irx, size_SMAP_irx,
 		                    if_conf_len, &if_conf[0], &ret);
 		have_ps2smap = 1;
 	}

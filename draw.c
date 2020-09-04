@@ -437,7 +437,7 @@ void setScrTmp(const char *msg0, const char *msg1)
     x = SCREEN_MARGIN;
     y = Menu_title_y;
     printXY(setting->Menu_Title, x, y, setting->color[COLOR_TEXT], TRUE, 0);
-    sprintf(temp_txt, " �4 LaunchELF %s �4", ULE_VERSION);
+    sprintf(temp_txt, " �4 netLaunchELF %s �4", ULE_VERSION);
     printXY(temp_txt, SCREEN_WIDTH - SCREEN_MARGIN - FONT_WIDTH * strlen(temp_txt), y,
             setting->color[COLOR_FRAME], TRUE, 0);
 

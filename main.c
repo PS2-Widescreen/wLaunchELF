@@ -9,10 +9,10 @@ extern u8 filexio_irx[];
 extern int size_filexio_irx;
 extern u8 DEV9_irx[];
 extern int size_DEV9_irx;
+extern u8 NETMAN_irx[];
+extern int size_NETMAN_irx;
 extern u8 ps2ip_irx[];
 extern int size_ps2ip_irx;
-extern u8 netman_irx[];
-extern int size_netman_irx;
 extern u8 SMAP_irx[];
 extern int size_SMAP_irx;
 extern u8 ps2host_irx[];
@@ -669,10 +669,6 @@ static void load_ps2ip(void)
 	int ret;
 
 	load_ps2dev9();
-	if (!have_netman) {
-		SifExecModuleBuffer(netman_irx, size_netman_irx, 0, NULL, &ret);
-		have_netman = 1;
-	}
 	if (!have_ps2smap) {
 		SifExecModuleBuffer(SMAP_irx, size_SMAP_irx,
 		                    if_conf_len, &if_conf[0], &ret);

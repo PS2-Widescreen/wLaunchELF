@@ -2,6 +2,7 @@
 //File name:   main.c
 //---------------------------------------------------------------------------
 #include "launchelf.h"
+#include "nfs.h"
 #include "smb2.h"
 
 extern u8 iomanx_irx[];
@@ -1492,6 +1493,7 @@ static void CleanUp(void)
 	if (ps2kbd_opened)
 		PS2KbdClose();
 	deinit_smb2();
+	deinit_nfs();
 	ps2ipDeinit();
 	NetManDeinit();
 }
@@ -2058,10 +2060,12 @@ int main(int argc, char *argv[])
 
 	CNF_error = loadConfig(mainMsg, strcpy(CNF, "LAUNCHELF.CNF"));
 
-       // SMB2
+       // SMB2 / NFS
        getIpConfig();
        load_ps2smap();
+       /* IP config is setup in init_smb2 */
        init_smb2(ip, netmask, gw);
+       init_nfs(ip, netmask, gw);
        sleep(5);
 
 	//Last chance to look at bootup screen, so allow braking here

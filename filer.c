@@ -2,18 +2,21 @@
 //File name:   filer.c
 //--------------------------------------------------------------
 #include "launchelf.h"
+#include "nfs.h"
 #include "smb2.h"
 
 enum vfs_type {
 	FS_PS2 = 0,
-	FS_SMB2
+	FS_SMB2,
+	FS_NFS
 };
 
 struct vfs_fh {
 	enum vfs_type type;
 	union {
 		int fd;
-		struct SMB2FH *fh;
+		struct SMB2FH *smb2fh;
+		struct NFSFH *nfsfh;
 	};
 };
 
@@ -807,6 +810,9 @@ int genRmdir(char *path)
 	if (!strncmp(path, "smb2", 4)) {
 		return SMB2rmdir(path);
 	}
+	if (!strncmp(path, "nfs", 3)) {
+		return NFSrmdir(path);
+	}
 
 	ret = fileXioRmdir(path);
 	if (!strncmp(path, "vmc", 3))
@@ -1114,6 +1120,8 @@ int getDir(const char *path, FILEINFO *info)
 		n = readCD(path, info, max);
 	else if (!strncmp(path, "smb2", 4))
 		n = readSMB2(path, info, max);
+	else if (!strncmp(path, "nfs", 3))
+		n = readNFS(path, info, max);
 	else if (!strncmp(path, "vmc", 3))
 		n = readVMC(path, info, max);
 	else
@@ -1618,6 +1626,8 @@ int delete (const char *path, const FILEINFO *file)
 		}
 		if (!strncmp(dir, "smb2", 4)) {
 			ret = SMB2rmdir(dir);
+		} else if (!strncmp(dir, "nfs", 3)) {
+			ret = NFSrmdir(dir);
 		} else if (!strncmp(dir, "mc", 2)) {
 			mcSync(0, NULL, NULL);
 			mcDelete(dir[2] - '0', 0, &dir[4]);
@@ -1637,6 +1647,8 @@ int delete (const char *path, const FILEINFO *file)
 	} else {  //The object to delete is a file
 		if (!strncmp(path, "smb2", 4)) {
 			ret = SMB2unlink(dir);
+		} else if (!strncmp(path, "nfs", 3)) {
+			ret = NFSunlink(dir);
 		} else if (!strncmp(path, "mc", 2)) {
 			mcSync(0, NULL, NULL);
 			mcDelete(dir[2] - '0', 0, &dir[4]);
@@ -1663,6 +1675,11 @@ int Rename(const char *path, const FILEINFO *file, const char *name)
 		sprintf(newPath, "%s%s", strchr(&path[6], '/') + 1, name);
 
 		ret = SMB2rename(oldPath, newPath);
+	} else if (!strncmp(path, "nfs", 3)) {
+		sprintf(oldPath, "%s%s", path, file->name);
+		sprintf(newPath, "%s%s", strchr(&path[6], '/') + 1, name);
+
+		ret = NFSrename(oldPath, newPath);
 	} else if (!strncmp(path, "hdd", 3)) {
 		sprintf(party, "hdd0:%s", &path[6]);
 		*strchr(party, '/') = 0;
@@ -1722,6 +1739,11 @@ int newdir(const char *path, const char *name)
 		strcat(dir, name);
 		genLimObjName(dir, 0);
 		ret = SMB2mkdir(dir, fileMode);
+	} else if (!strncmp(path, "nfs", 3)) {
+		strcpy(dir, path);
+		strcat(dir, name);
+		genLimObjName(dir, 0);
+		ret = NFSmkdir(dir, fileMode);
 	} else if (!strncmp(path, "hdd", 3)) {
 		getHddParty(path, NULL, party, dir);
 		ret = mountParty(party);
@@ -2089,6 +2111,7 @@ restart_copy:  //restart point for PM_PSU_RESTORE to reprocess modified argument
 				mcSync(0, NULL, &dummy);
 			} else {                                    //Handle folder copied to non-MC
 			        if (!strncmp(out, "smb2", 4)) {  //for files copied to smb2: we skip Chstat
+			        } else if (!strncmp(out, "nfs", 3)) {  //for files copied to nfs: we skip Chstat
 			        } else if (!strncmp(out, "mass", 4)) {  //for files copied to mass: we skip Chstat
 				} else {                                //for other devices we use fileXio_ stuff
 					memcpy(iox_stat.ctime, (void *)&file.stats._Create, 8);
@@ -2362,6 +2385,7 @@ non_PSU_RESTORE_init:
 		}
 	} else {                                    //Handle file copied to non-MC
 	        if (!strncmp(out, "smb2", 4)) {  //for files copied to smb2: we skip Chstat
+	        } else if (!strncmp(out, "nfs", 3)) {  //for files copied to nfs: we skip Chstat
 	        } else if (!strncmp(out, "mass", 4)) {  //for files copied to mass: we skip Chstat
 		} else {                                //for other devices we use fileXio_ stuff
 			memcpy(iox_stat.ctime, (void *)&file.stats._Create, 8);
@@ -2839,6 +2863,10 @@ int setFileList(const char *path, const char *ext, FILEINFO *files, int cnfmode)
 		}
 		if (smb2_shares) {
 			strcpy(files[nfiles].name, "smb2:");
+			files[nfiles++].stats.AttrFile = sceMcFileAttrSubdir;
+		}
+		if (nfs_shares) {
+			strcpy(files[nfiles].name, "nfs:");
 			files[nfiles++].stats.AttrFile = sceMcFileAttrSubdir;
 		}
 		if (!cnfmode || (cnfmode == JPG_CNF)) {
@@ -3998,8 +4026,15 @@ struct vfs_fh *vfsOpen(char *path, int mode)
 	}
 	if (!strncmp(path, "smb2", 4)) {
 		fh->type = FS_SMB2;
-		fh->fh = SMB2open(path, mode);
-		if (fh->fh == NULL) {
+		fh->smb2fh = SMB2open(path, mode);
+		if (fh->smb2fh == NULL) {
+			free(fh);
+			return NULL;
+		}
+	} else if (!strncmp(path, "nfs", 3)) {
+		fh->type = FS_NFS;
+		fh->nfsfh = NFSopen(path, mode);
+		if (fh->nfsfh == NULL) {
 			free(fh);
 			return NULL;
 		}
@@ -4020,7 +4055,9 @@ int vfsLseek(struct vfs_fh *fh, int where, int how)
 	case FS_PS2:
 		return lseek(fh->fd, where, how);
 	case FS_SMB2:
-		return SMB2lseek(fh->fh, where, how);
+		return SMB2lseek(fh->smb2fh, where, how);
+	case FS_NFS:
+		return NFSlseek(fh->nfsfh, where, how);
 	}
 	return -1;
 }
@@ -4031,7 +4068,9 @@ int vfsRead(struct vfs_fh *fh, void *buf, int size)
 	case FS_PS2:
 		return read(fh->fd, buf, size);
 	case FS_SMB2:
-		return SMB2read(fh->fh, buf, size);
+		return SMB2read(fh->smb2fh, buf, size);
+	case FS_NFS:
+		return NFSread(fh->nfsfh, buf, size);
 	}
 	return -1;
 }
@@ -4042,7 +4081,9 @@ int vfsWrite(struct vfs_fh *fh, void *buf, int size)
 	case FS_PS2:
 		return write(fh->fd, buf, size);
 	case FS_SMB2:
-		return SMB2write(fh->fh, buf, size);
+		return SMB2write(fh->smb2fh, buf, size);
+	case FS_NFS:
+		return NFSwrite(fh->nfsfh, buf, size);
 	}
 	return -1;
 }
@@ -4060,8 +4101,12 @@ int vfsClose(struct vfs_fh *fh)
 		rc = close(fh->fd);
 		break;
 	case FS_SMB2:
-		rc = SMB2close(fh->fh);
-		free(fh->fh);
+		rc = SMB2close(fh->smb2fh);
+		free(fh->smb2fh);
+		break;
+	case FS_NFS:
+		rc = NFSclose(fh->nfsfh);
+		free(fh->nfsfh);
 		break;
 	}
 	free(fh);

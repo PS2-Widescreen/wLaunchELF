@@ -662,10 +662,6 @@ static void load_ps2smap(void)
 				    0, NULL, NULL);
 		have_ps2smap = 1;
 	}
-	if (!have_ps2ip) {
-		SifExecModuleBuffer(ps2ip_irx, size_ps2ip_irx, 0, NULL, &ret);
-		have_ps2ip = 1;
-	}
 }
 //------------------------------
 //endfunc load_ps2smap

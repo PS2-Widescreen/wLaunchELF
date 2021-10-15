@@ -4,12 +4,13 @@
 //---------------------------------------------------------------------------
 #include <debug.h>
 #include <netman.h>
+#include <time.h>
+#include <sys/types.h>
 #include <ps2ip.h>
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
-#include <sys/types.h>
-#include <time.h>
+#include <sys/time.h>
 #include <unistd.h>
 
 #include <launchelf.h>
@@ -19,6 +20,10 @@
 #include <smb2/libsmb2.h>
 
 struct smb2_share *smb2_shares = NULL;
+
+#define discard_const(ptr) ((void *)((intptr_t)(ptr)))
+
+static struct smb2_share *smb2_find_share(const char *name);
 
 static void EthStatusCheckCb(s32 alarm_id, u16 time, void *common)
 {
@@ -63,14 +68,14 @@ static void free_smb2_share(struct smb2_share *smb2_share)
                 smb2_destroy_context(smb2_share->smb2);
         }
         free(smb2_share->name);
-        free(smb2_share->user);
-        free(smb2_share->password);
+        free(discard_const(smb2_share->user));
+        free(discard_const(smb2_share->password));
         free(smb2_share);
 }
 
 static int loadSMB2CNF(char *path)
 {
-	unsigned char *RAM_p;
+	char *RAM_p;
         char *CNF_p, *name, *value;
         struct smb2_share *smb2_share = NULL;
         int entries = 0;
@@ -239,8 +244,8 @@ int readSMB2(const char *path, FILEINFO *info, int max)
                         if (strlen(share->name) >= MAX_NAME) {
                                 continue;
                         }
-                        strncpy(info[n].name, share->name, MAX_NAME);
-                        info[n].name[MAX_NAME] = 0;
+                        strncpy(info[n].name, share->name, MAX_NAME-1);
+                        info[n].name[MAX_NAME-1] = 0;
                         clear_mcTable(&info[n].stats);
 			info[n].stats.AttrFile = MC_ATTR_norm_folder;
                         strncpy((char *)info[n].stats.EntryName, info[n].name, 32);
@@ -274,7 +279,7 @@ int readSMB2(const char *path, FILEINFO *info, int max)
                         continue;
                 }
 		strncpy(info[n].name, ent->name, MAX_NAME);
-                info[n].name[MAX_NAME] = 0;
+                info[n].name[MAX_NAME-1] = 0;
 		clear_mcTable(&info[n].stats);
 		if (ent->st.smb2_type == SMB2_TYPE_DIRECTORY) {
 			info[n].stats.AttrFile = MC_ATTR_norm_folder;
@@ -421,12 +426,12 @@ int SMB2close(struct SMB2FH *fh)
 
 int SMB2read(struct SMB2FH *fh, char *buf, int size)
 {
-        return smb2_read(fh->smb2, fh->fh, buf, size);
+        return smb2_read(fh->smb2, fh->fh, (uint8_t *)buf, size);
 }
 
 int SMB2write(struct SMB2FH *fh, char *buf, int size)
 {
-        return smb2_write(fh->smb2, fh->fh, buf, size);
+        return smb2_write(fh->smb2, fh->fh, (uint8_t *)buf, size);
 }
 
 int SMB2lseek(struct SMB2FH *fh, int where, int how)

@@ -64,7 +64,7 @@ static struct nfs_share *nfs_find_share(const char *name);
 
 static int loadNFSCNF(char *path)
 {
-	unsigned char *RAM_p;
+	char *RAM_p;
         char *CNF_p, *name, *value;
         struct nfs_share *nfs_share = NULL;
         int entries = 0;
@@ -228,8 +228,8 @@ int readNFS(const char *path, FILEINFO *info, int max)
                         if (strlen(share->name) >= MAX_NAME) {
                                 continue;
                         }
-                        strncpy(info[n].name, share->name, MAX_NAME);
-                        info[n].name[MAX_NAME] = 0;
+                        strncpy(info[n].name, share->name, MAX_NAME-1);
+                        info[n].name[MAX_NAME-1] = 0;
                         clear_mcTable(&info[n].stats);
 			info[n].stats.AttrFile = MC_ATTR_norm_folder;
                         strncpy((char *)info[n].stats.EntryName, info[n].name, 32);
@@ -266,7 +266,7 @@ int readNFS(const char *path, FILEINFO *info, int max)
                         continue;
                 }
 		strncpy(info[n].name, ent->name, MAX_NAME);
-                info[n].name[MAX_NAME] = 0;
+                info[n].name[MAX_NAME-1] = 0;
 		clear_mcTable(&info[n].stats);
 		if (ent->type == NF3DIR) {
 			info[n].stats.AttrFile = MC_ATTR_norm_folder;

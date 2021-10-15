@@ -101,6 +101,7 @@ static int loadSMB2CNF(char *path)
                         if (smb2_find_share(smb2_share->name)) {
                                 free(smb2_share);
                                 smb2_share = NULL;
+                                continue;
                         }
                         smb2_share->url = strdup(value);
                         smb2_share->smb2 = smb2 = smb2_init_context();
@@ -112,9 +113,7 @@ static int loadSMB2CNF(char *path)
                                 scr_printf("failed to connect to : //%s/%s %s\n",
                                            url->server, url->share,
                                            smb2_get_error(smb2));
-                                smb2_destroy_url(url);
-                                smb2_destroy_context(smb2);
-                                free_smb2_share(smb2_share);
+                                free(smb2_share);
                                 smb2_share = NULL;
                                 continue;
                         }

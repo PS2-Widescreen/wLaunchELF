@@ -87,6 +87,7 @@ static int loadNFSCNF(char *path)
                         if (nfs_find_share(nfs_share->name)) {
                                 free(nfs_share);
                                 nfs_share = NULL;
+                                continue;
                         }
                         nfs_share->url = strdup(value);
                         nfs_share->nfs = nfs = nfs_init_context();

@@ -21,9 +21,10 @@ jobs:
           git config --global --add safe.directory "$GITHUB_WORKSPACE"
           git fetch --prune --unshallow
 
-      - name: clone libnfs
+      - name: clone dependencies
         run: |
           git clone https://github.com/sahlberg/libnfs
+          git clone https://github.com/sahlberg/libsmb2
 
       - name: install libnfs into PS2SDK
         run: |

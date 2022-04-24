@@ -18,7 +18,17 @@ jobs:
       - uses: actions/checkout@v2
       - run: |
           git fetch --prune --unshallow
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
 
+      - name: clone libnfs
+        run: |
+          git clone https://github.com/sahlberg/libnfs
+          
+      - name: install libnfs into PS2SDK
+        run: |
+            cd libnfs/ps2_ee
+            make -f Makefile.PS2_EE install
+            
       - name: Compile wLaunchELF
         run: |
           make

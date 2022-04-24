@@ -24,12 +24,17 @@ jobs:
       - name: clone libnfs
         run: |
           git clone https://github.com/sahlberg/libnfs
-          
+
       - name: install libnfs into PS2SDK
         run: |
             cd libnfs/ps2_ee
             make -f Makefile.PS2_EE install
             
+      - name: install libsmb2 into PS2SDK
+        run: |
+            cd libsmb2/lib
+            make -f Makefile.PS2_EE install
+
       - name: Compile wLaunchELF
         run: |
           make

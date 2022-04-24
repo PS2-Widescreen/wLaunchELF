@@ -1,6 +1,6 @@
 [![CI](https://github.com/ps2homebrew/wLaunchELF/workflows/CI/badge.svg)](https://github.com/ps2homebrew/wLaunchELF/actions?query=workflow%3ACI)
 
-# smbLaunchELF
+# smbLaunchELF 
 This is a special version of LaunchELF that has support for SMB2/3 and NFS.
 It can connect to Windows/Samba/Azure file shares and supports up to
 version 3.1.1 of SMB.
